@@ -2,16 +2,16 @@
 import { Response, Request, NextFunction, Application } from "express";
 import { check, validationResult } from "express-validator";
 import { Types } from "mongoose";
-import { Event } from "../models/Event";
+import { Content } from "../models/Content";
 import { Setting } from "../models/Setting";
 import * as passportConfig from "../config/passport";
 
 export class SettingRoute {
 
 	static init(app: Application) {
-		app.post("/api/setting/event", SettingRoute.postSettingEvent);
-		app.post("/api/setting/event/update", passportConfig.isAuthenticated, SettingRoute.postSettingEventUpdate);
-		app.post("/api/setting/event/delete", passportConfig.isAuthenticated, SettingRoute.postSettingEventDelete);
+		app.post("/api/setting/content", SettingRoute.postSettingEvent);
+		app.post("/api/setting/content/update", passportConfig.isAuthenticated, SettingRoute.postSettingEventUpdate);
+		app.post("/api/setting/content/delete", passportConfig.isAuthenticated, SettingRoute.postSettingEventDelete);
 	}
 
 	private static async postSettingEvent(req: Request, res: Response, next: NextFunction) {
@@ -42,7 +42,7 @@ export class SettingRoute {
 				return;
 			}
 
-			Event.findById(req.body.eventId, (error, event) => {
+			Content.findById(req.body.eventId, (error, event) => {
 				if (error) {
 					return next(error);
 				}

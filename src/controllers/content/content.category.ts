@@ -114,7 +114,6 @@ export class ContentCategoryRoute {
 		}
 		await check("name", "Name was not found.").isLength({ min: 1, max: 16 }).run(req);
 		await check("image", "Image was not found.").isURL().run(req);
-		await check("description", "Description was not found.").isLength({ min: 1, max: 16 }).run(req);
 		await check("keywords", "Keywords was not found.").isArray().run(req);
 		await check("enabled", "Enabled value was not found.").isBoolean().run(req);
 
@@ -140,7 +139,6 @@ export class ContentCategoryRoute {
 			_parentId: req.body._parentId,
 			name: req.body.name,
 			image: req.body.image,
-			description: req.body.description,
 			keywords: req.body.keywords,
 			enabled: req.body.enabled
 		});
