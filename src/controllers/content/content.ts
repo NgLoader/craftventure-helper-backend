@@ -6,14 +6,16 @@ import { sendResponseError, sendResponseErrorMsg, sendResponseSuccess } from "..
 import { Content, ContentCategory, ContentDocument } from "../../models/Content";
 import * as passportConfig from "../../config/passport";
 import { ContentCategoryRoute } from "./content.category";
+import { UserDocument } from "../../models/User";
+import { UserRole } from "../../models/User";
 
 export class ContentRoute {
 
 	static init(app: Application) {
-		app.post("/api/content", ContentRoute.postContents);
-		app.post("/api/content/create", passportConfig.isAuthenticated, ContentRoute.postCreate);
-		app.post("/api/content/update", passportConfig.isAuthenticated, ContentRoute.postUpdate);
-		app.post("/api/content/delete", passportConfig.isAuthenticated, ContentRoute.postDelete);
+		app.post("/content", ContentRoute.postContents);
+		app.post("/content/create", passportConfig.isAuthenticated, ContentRoute.postCreate);
+		app.post("/content/update", passportConfig.isAuthenticated, ContentRoute.postUpdate);
+		app.post("/content/delete", passportConfig.isAuthenticated, ContentRoute.postDelete);
 
 		ContentCategoryRoute.init(app);
 	}
@@ -56,7 +58,7 @@ export class ContentRoute {
 		if (req.body._parentId) {
 			await check("_categoryId", "CategoryId was not valied.").custom(value => Types.ObjectId.isValid(value)).run(req);
 		}
-		await check("name", "Name was not found.").isLength({ min: 1, max: 16 }).run(req);
+		await check("name", "Name was not found.").isLength({ min: 1, max: 32 }).run(req);
 		await check("image", "Image was not found.").isURL().run(req);
 		await check("keywords", "Keywords was not found.").isArray().run(req);
 		await check("enabled", "Enabled value was not found.").isBoolean().run(req);
@@ -66,6 +68,12 @@ export class ContentRoute {
 			sendResponseError(res, errors);
 			return;
 		}
+
+        const userDoc = req.user as UserDocument;
+        if (userDoc.role != UserRole.ADMIN && userDoc.role != UserRole.EDITOR) {
+            sendResponseErrorMsg(res, "You don't have permission to performe this command");
+            return;
+        }
 
 		if (req.body._categoryId) {
 			const parent = await ContentCategory.findById(req.body._categoryId).exec()
@@ -130,6 +138,12 @@ export class ContentRoute {
 			return;
 		}
 
+        const userDoc = req.user as UserDocument;
+        if (userDoc.role != UserRole.ADMIN && userDoc.role != UserRole.EDITOR) {
+            sendResponseErrorMsg(res, "You don't have permission to performe this command");
+            return;
+        }
+
 		Content.findById(req.body._id, async (error, result) => {
 			if (error) {
 				return next(error);
@@ -174,6 +188,12 @@ export class ContentRoute {
 			sendResponseError(res, errors);
 			return;
 		}
+
+        const userDoc = req.user as UserDocument;
+        if (userDoc.role != UserRole.ADMIN && userDoc.role != UserRole.EDITOR) {
+            sendResponseErrorMsg(res, "You don't have permission to performe this command");
+            return;
+        }
 
 		Content.findById(req.body._id, async (error, result) => {
 			if (error) {

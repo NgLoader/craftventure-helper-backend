@@ -4,8 +4,9 @@ import passport from "passport";
 import passportLocal from "passport-local";
 import _ from "lodash";
 
-import { User, UserDocument } from "../models/User";
+import { User, UserDocument, UserRole } from "../models/User";
 import { Request, Response, NextFunction } from "express";
+import { sendResponseErrorMsg } from "../util/response";
 
 const LocalStrategy = passportLocal.Strategy;
 
@@ -23,7 +24,7 @@ passport.deserializeUser((id, done) => {
  * Sign in using Email and Password.
  */
 passport.use(new LocalStrategy({ usernameField: "email" }, (email, password, done) => {
-    User.findOne({ email: "nilsgereke1@gmail.com" /*email.toLowerCase()*/ }, (err, user: any) => {
+    User.findOne({ email: email.toLowerCase() }, (err, user: any) => {
         if (err) {
             return done(err);
         }
@@ -32,8 +33,6 @@ passport.use(new LocalStrategy({ usernameField: "email" }, (email, password, don
             return done(undefined, false, { message: `Email ${email} not found.` });
         }
 
-        return done(undefined, user);
-        /*
         user.comparePassword(password, (err2: Error, isMatch: boolean) => {
             if (err2) {
                 return done(err2);
@@ -44,7 +43,6 @@ passport.use(new LocalStrategy({ usernameField: "email" }, (email, password, don
             }
             return done(undefined, false, { message: "Invalid email or password." });
         });
-        */
     });
 }));
 

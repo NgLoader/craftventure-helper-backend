@@ -3,9 +3,17 @@ import bcrypt from "bcrypt-nodejs";
 import crypto from "crypto";
 import mongoose from "mongoose";
 
+export enum UserRole {
+    ADMIN = "ADMIN",
+    EDITOR = "EDITOR",
+    USER = "USER"
+}
+
 export type UserDocument = mongoose.Document & {
     email: string;
     password: string;
+
+    role: UserRole;
 
     tokens: AuthToken[]
 
@@ -16,8 +24,6 @@ export type UserDocument = mongoose.Document & {
     comparePassword: comparePasswordFunction;
     gravatar: (size: number) => string;
 };
-
-
 
 type comparePasswordFunction = (candidatePassword: string, cb: (err: any, isMatch: any) => any) => void;
 
@@ -32,6 +38,11 @@ const UserSchema = new mongoose.Schema({
         unique: true
     },
     password: String,
+    role: {
+        type: String,
+        enum: UserRole,
+        default: UserRole.USER
+    },
 
     tokens: Array,
 

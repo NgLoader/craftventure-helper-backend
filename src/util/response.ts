@@ -13,7 +13,7 @@ export function sendResponse(res: Response, answer: ResponseFormat) {
 	res.json(answer);
 }
 
-export function sendResponseSuccess(res: Response, content: unknown) {
+export function sendResponseSuccess(res: Response, content?: unknown) {
 	sendResponse(res, { success: true, errors: undefined, content });
 }
 

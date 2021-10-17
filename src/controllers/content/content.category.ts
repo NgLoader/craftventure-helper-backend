@@ -5,15 +5,17 @@ import { ObjectId, Types } from "mongoose";
 import { sendResponseError, sendResponseErrorMsg, sendResponseSuccess } from "../../util/response";
 import { Content, ContentCategory, ContentCategoryDocument } from "../../models/Content";
 import * as passportConfig from "../../config/passport";
+import { UserDocument } from "../../models/User";
+import { UserRole } from "../../models/User";
 
 export class ContentCategoryRoute {
 
 	static init(app: Application) {
-		app.post("/api/content/path", ContentCategoryRoute.postPath);
-		app.post("/api/content/category", ContentCategoryRoute.postCategorys);
-		app.post("/api/content/category/create", passportConfig.isAuthenticated, ContentCategoryRoute.postCreate);
-		app.post("/api/content/category/update", passportConfig.isAuthenticated, ContentCategoryRoute.postUpdate);
-		app.post("/api/content/category/delete", passportConfig.isAuthenticated, ContentCategoryRoute.postDelete);
+		app.post("/content/path", ContentCategoryRoute.postPath);
+		app.post("/content/category", ContentCategoryRoute.postCategorys);
+		app.post("/content/category/create", passportConfig.isAuthenticated, ContentCategoryRoute.postCreate);
+		app.post("/content/category/update", passportConfig.isAuthenticated, ContentCategoryRoute.postUpdate);
+		app.post("/content/category/delete", passportConfig.isAuthenticated, ContentCategoryRoute.postDelete);
 	}
 
 	/**
@@ -112,7 +114,7 @@ export class ContentCategoryRoute {
 		if (req.body._parentId) {
 			await check("_parentId", "ParentId was not valied.").custom(value => Types.ObjectId.isValid(value)).run(req);
 		}
-		await check("name", "Name was not found.").isLength({ min: 1, max: 16 }).run(req);
+		await check("name", "Name was not found.").isLength({ min: 1, max: 32 }).run(req);
 		await check("image", "Image was not found.").isURL().run(req);
 		await check("keywords", "Keywords was not found.").isArray().run(req);
 		await check("enabled", "Enabled value was not found.").isBoolean().run(req);
@@ -122,6 +124,12 @@ export class ContentCategoryRoute {
 			sendResponseError(res, errors);
 			return;
 		}
+
+        const userDoc = req.user as UserDocument;
+        if (userDoc.role != UserRole.ADMIN && userDoc.role != UserRole.EDITOR) {
+            sendResponseErrorMsg(res, "You don't have permission to performe this command");
+            return;
+        }
 
 		if (req.body._parentId) {
 			const parent = await ContentCategory.findById(req.body._parentId).exec()
@@ -176,6 +184,12 @@ export class ContentCategoryRoute {
 			return;
 		}
 
+        const userDoc = req.user as UserDocument;
+        if (userDoc.role != UserRole.ADMIN && userDoc.role != UserRole.EDITOR) {
+            sendResponseErrorMsg(res, "You don't have permission to performe this command");
+            return;
+        }
+
 		ContentCategory.findById(req.body._id, async (error, result) => {
 			if (error) {
 				return next(error);
@@ -229,6 +243,12 @@ export class ContentCategoryRoute {
 			sendResponseError(res, errors);
 			return;
 		}
+
+        const userDoc = req.user as UserDocument;
+        if (userDoc.role != UserRole.ADMIN && userDoc.role != UserRole.EDITOR) {
+            sendResponseErrorMsg(res, "You don't have permission to performe this command");
+            return;
+        }
 
 		ContentCategory.findById(req.body._id, async (error, result) => {
 			if (error) {

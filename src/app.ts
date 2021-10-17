@@ -9,7 +9,7 @@ import mongo from "connect-mongo";
 import passport from "passport";
 import lusca from "lusca";
 import cors from "cors";
-import { MONGODB_URI, RATE_LIMIT_MAX, RATE_LIMIT_WINDOWMS, SESSION_SECRET, CROS_ORIGIN } from "./util/secrets";
+import { MONGODB_URI, RATE_LIMIT_MAX, RATE_LIMIT_WINDOWMS, SESSION_SECRET, CROS_ORIGIN, ENVIRONMENT } from "./util/secrets";
 import { UserRoute } from "./controllers/user";
 import { SettingRoute } from "./controllers/setting";
 import { ContentRoute } from "./controllers/content/content";

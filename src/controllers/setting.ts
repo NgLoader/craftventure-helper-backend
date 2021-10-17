@@ -9,9 +9,9 @@ import * as passportConfig from "../config/passport";
 export class SettingRoute {
 
 	static init(app: Application) {
-		app.post("/api/setting/content", SettingRoute.postSettingEvent);
-		app.post("/api/setting/content/update", passportConfig.isAuthenticated, SettingRoute.postSettingEventUpdate);
-		app.post("/api/setting/content/delete", passportConfig.isAuthenticated, SettingRoute.postSettingEventDelete);
+		app.post("/setting/content", SettingRoute.postSettingEvent);
+		app.post("/setting/content/update", passportConfig.isAuthenticated, SettingRoute.postSettingEventUpdate);
+		app.post("/setting/content/delete", passportConfig.isAuthenticated, SettingRoute.postSettingEventDelete);
 	}
 
 	private static async postSettingEvent(req: Request, res: Response, next: NextFunction) {
