@@ -1,27 +1,31 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 import { Application, NextFunction, Request, Response } from "express";
 import { check, validationResult } from "express-validator";
-import { ObjectId, Types } from "mongoose";
+import mongoose, { ObjectId, Types } from "mongoose";
 import { sendResponseError, sendResponseErrorMsg, sendResponseSuccess } from "../../util/response";
-import { Content, ContentCategory, ContentCategoryDocument } from "../../models/Content";
+import { Content, ContentCategory, ContentCategoryDocument, ContentDocument } from "../../models/Content";
 import * as passportConfig from "../../config/passport";
 import { UserDocument } from "../../models/User";
 import { UserRole } from "../../models/User";
+import { elementAt } from "rxjs-compat/operator/elementAt";
+
 
 export class ContentCategoryRoute {
 
 	static init(app: Application) {
-		app.post("/content/path", ContentCategoryRoute.postPath);
-		app.post("/content/category", ContentCategoryRoute.postCategorys);
-		app.post("/content/category/create", passportConfig.isAuthenticated, ContentCategoryRoute.postCreate);
-		app.post("/content/category/update", passportConfig.isAuthenticated, ContentCategoryRoute.postUpdate);
-		app.post("/content/category/delete", passportConfig.isAuthenticated, ContentCategoryRoute.postDelete);
+		app.post("/api/content/path", ContentCategoryRoute.postPath);
+		app.post("/api/content/pathid", ContentCategoryRoute.postPathIds);
+		app.post("/api/content/search", ContentCategoryRoute.postSearch);
+		app.post("/api/content/category", ContentCategoryRoute.postCategorys);
+		app.post("/api/content/category/create", passportConfig.isAuthenticated, ContentCategoryRoute.postCreate);
+		app.post("/api/content/category/update", passportConfig.isAuthenticated, ContentCategoryRoute.postUpdate);
+		app.post("/api/content/category/delete", passportConfig.isAuthenticated, ContentCategoryRoute.postDelete);
 	}
 
 	/**
-* Convert a path to ids.
-* @route POST /api/content/path
-*/
+	* Convert a path to ids.
+	* @route POST /api/content/path
+	*/
 	private static async postPath(req: Request, res: Response, next: NextFunction) {
 		await check("path", "Path was not found.").isArray().run(req);
 
@@ -49,9 +53,9 @@ export class ContentCategoryRoute {
 
 			if (!result || result.length == 0) {
 				const element = await Content.find({ "_categoryId": parentId, "name": pathName }).exec()
-				.catch(error => {
-					return next(error);
-				});
+					.catch(error => {
+						return next(error);
+					});
 
 				if (element && element.length != 0) {
 					if (element[0].enabled || req.user) {
@@ -74,6 +78,139 @@ export class ContentCategoryRoute {
 		}
 
 		sendResponseSuccess(res, { ids });
+	}
+
+	/**
+	* Convert a path to ids.
+	* @route POST /api/content/pathid
+	*/
+	private static async postPathIds(req: Request, res: Response, next: NextFunction) {
+		await check("id", "id was not valied.").custom(value => Types.ObjectId.isValid(value)).run(req);
+
+		const errors = validationResult(req);
+		if (!errors.isEmpty()) {
+			sendResponseError(res, errors);
+			return;
+		}
+
+		const ids: {
+			id: ObjectId,
+			parentId: ObjectId,
+			name: string
+		}[] = [];
+		let parentId: ObjectId = req.body.id;
+
+		while (parentId != undefined) {
+			const result = await ContentCategory.find({ _id: parentId }).exec()
+				.catch(error => {
+					return next(error);
+				});
+
+			if (result && result.length != 0 && (req.user || result[0].enabled)) {
+				ids.push({
+					id: result[0]._id,
+					parentId: result[0]._parentId,
+					name: result[0].name
+				});
+				parentId = result[0]._parentId;
+			} else {
+				parentId = undefined;
+			}
+		}
+
+		sendResponseSuccess(res, ids);
+	}
+
+	/**
+	 *  Search request
+	 * @route GET /api/content/search
+	 */
+	private static async postSearch(req: Request, res: Response, next: NextFunction) {
+		await check("input", "Input was not found.").isString().run(req);
+		await check("page", "Must be a number and higher than zero").optional().isNumeric().isLength({ min: 1 }).run(req);
+		await check("limit", "Must be a number and between 1 and 100").optional().isNumeric().isLength({ min: 1, max: 100 }).run(req);
+		await check("type", "Type was not found.").isString().optional().run(req);
+
+		const errors = validationResult(req);
+		if (!errors.isEmpty()) {
+			sendResponseError(res, errors);
+			return;
+		}
+
+
+		const page: number = req.body.page as any || 0;
+		const limit: number = req.body.limit as any || 10;
+		const type: string = req.body.type as string || undefined;
+		const input: string = req.body.input as string;
+
+		ContentCategory.find({
+			...(!req.user) && {
+				enabled: true,
+			},
+			...(type != undefined && {
+				$and: [
+					{
+						name: { $regex: `(?i)(${input})` }
+					},
+					{
+						keywords: { $regex: `(?i)(${input})` }
+					}
+				].map(value => ({ ...value, name: type })),
+			}),
+			...(type == undefined && {
+				$or: [
+					{
+						name: { $regex: `(?i)(${input})` }
+					},
+					{
+						keywords: { $regex: `(?i)(${input})` }
+					}
+				]
+			})
+		}, (error, result) => {
+			if (error) {
+				return next(error);
+			}
+
+			const contentLimit = limit - result.length;
+			Content.find({
+				...(!req.user) && {
+					enabled: true,
+				},
+				...(type != undefined && {
+					$and: [
+						{
+							name: { $regex: `(?i)(${input})` }
+						},
+						{
+							keywords: { $regex: `(?i)(${input})` }
+						}
+					].map(value => ({ ...value, name: type })),
+				}),
+				...(type == undefined && {
+					$or: [
+						{
+							name: { $regex: `(?i)(${input})` }
+						},
+						{
+							description: { $regex: `(?i)(${input})` }
+						},
+						{
+							keywords: { $regex: `(?i)(${input})` }
+						}
+					]
+				})
+			}, (error2, result2) => {
+				if (error2) {
+					return next(error2);
+				}
+
+				sendResponseSuccess(res, {
+					categorys: result,
+					elements: result2
+				});
+			}).skip(contentLimit * page).limit(contentLimit);
+		}).skip(limit * page).limit(limit);
 	}
 
 	/**
@@ -115,7 +252,7 @@ export class ContentCategoryRoute {
 			await check("_parentId", "ParentId was not valied.").custom(value => Types.ObjectId.isValid(value)).run(req);
 		}
 		await check("name", "Name was not found.").isLength({ min: 1, max: 32 }).run(req);
-		await check("image", "Image was not found.").isURL().run(req);
+		// await check("image", "Image was not found.").isURL().run(req);
 		await check("keywords", "Keywords was not found.").isArray().run(req);
 		await check("enabled", "Enabled value was not found.").isBoolean().run(req);
 
@@ -125,11 +262,11 @@ export class ContentCategoryRoute {
 			return;
 		}
 
-        const userDoc = req.user as UserDocument;
-        if (userDoc.role != UserRole.ADMIN && userDoc.role != UserRole.EDITOR) {
-            sendResponseErrorMsg(res, "You don't have permission to performe this command");
-            return;
-        }
+		const userDoc = req.user as UserDocument;
+		if (userDoc.role != UserRole.ADMIN && userDoc.role != UserRole.EDITOR) {
+			sendResponseErrorMsg(res, "You don't have permission to performe this command");
+			return;
+		}
 
 		if (req.body._parentId) {
 			const parent = await ContentCategory.findById(req.body._parentId).exec()
@@ -151,7 +288,7 @@ export class ContentCategoryRoute {
 			enabled: req.body.enabled
 		});
 
-		ContentCategory.findOne({ "_parentId": category._parentId, "name": category.name }, (error, result) => {
+		ContentCategory.findOne({ "_parentId": category._parentId, "name": category.name }, (error: any, result: any) => {
 			if (error) {
 				return next(error);
 			}
@@ -184,13 +321,13 @@ export class ContentCategoryRoute {
 			return;
 		}
 
-        const userDoc = req.user as UserDocument;
-        if (userDoc.role != UserRole.ADMIN && userDoc.role != UserRole.EDITOR) {
-            sendResponseErrorMsg(res, "You don't have permission to performe this command");
-            return;
-        }
+		const userDoc = req.user as UserDocument;
+		if (userDoc.role != UserRole.ADMIN && userDoc.role != UserRole.EDITOR) {
+			sendResponseErrorMsg(res, "You don't have permission to performe this command");
+			return;
+		}
 
-		ContentCategory.findById(req.body._id, async (error, result) => {
+		ContentCategory.findById(req.body._id, async (error: any, result: { _id: any; name: any; image: any; keywords: any; enabled: any; save: (arg0: (error2: any, result2: any) => void) => void; }) => {
 			if (error) {
 				return next(error);
 			}
@@ -216,7 +353,7 @@ export class ContentCategoryRoute {
 			result.image = req.body.image || result.image;
 			result.keywords = req.body.keywords || result.keywords;
 			result.enabled = req.body.enabled != undefined ? req.body.enabled : result.enabled;
-			result.save((error2, result2) => {
+			result.save((error2: any, result2: unknown) => {
 				if (error2) {
 					return next(error2);
 				}
@@ -244,13 +381,13 @@ export class ContentCategoryRoute {
 			return;
 		}
 
-        const userDoc = req.user as UserDocument;
-        if (userDoc.role != UserRole.ADMIN && userDoc.role != UserRole.EDITOR) {
-            sendResponseErrorMsg(res, "You don't have permission to performe this command");
-            return;
-        }
+		const userDoc = req.user as UserDocument;
+		if (userDoc.role != UserRole.ADMIN && userDoc.role != UserRole.EDITOR) {
+			sendResponseErrorMsg(res, "You don't have permission to performe this command");
+			return;
+		}
 
-		ContentCategory.findById(req.body._id, async (error, result) => {
+		ContentCategory.findById(req.body._id, async (error: any, result: { _id: mongoose.Schema.Types.ObjectId; deleteOne: () => void; }) => {
 			if (error) {
 				return next(error);
 			}

@@ -3,19 +3,19 @@ import { Response, Request, NextFunction, Application } from "express";
 import { check, validationResult } from "express-validator";
 import { Types } from "mongoose";
 import { Content } from "../models/Content";
-import { Setting } from "../models/Setting";
+import { Setting, SettingDocument } from "../models/Setting";
 import * as passportConfig from "../config/passport";
 
 export class SettingRoute {
 
 	static init(app: Application) {
-		app.post("/setting/content", SettingRoute.postSettingEvent);
-		app.post("/setting/content/update", passportConfig.isAuthenticated, SettingRoute.postSettingEventUpdate);
-		app.post("/setting/content/delete", passportConfig.isAuthenticated, SettingRoute.postSettingEventDelete);
+		app.post("/api/setting/content", SettingRoute.postSettingEvent);
+		app.post("/api/setting/content/update", passportConfig.isAuthenticated, SettingRoute.postSettingEventUpdate);
+		app.post("/api/setting/content/delete", passportConfig.isAuthenticated, SettingRoute.postSettingEventDelete);
 	}
 
 	private static async postSettingEvent(req: Request, res: Response, next: NextFunction) {
-		Setting.findOne({ "_setting": "event" }, (error, setting) => {
+		Setting.findOne({ "_setting": "event" }, (error: any, setting: any) => {
 			if (error) {
 				return next(error);
 			}
@@ -42,7 +42,7 @@ export class SettingRoute {
 				return;
 			}
 
-			Content.findById(req.body.eventId, (error, event) => {
+			Content.findById(req.body.eventId, (error: any, event: { id: any; name: any; image: any; }) => {
 				if (error) {
 					return next(error);
 				}
@@ -57,7 +57,7 @@ export class SettingRoute {
 					return;
 				}
 
-				Setting.findOne({ "_setting": "event" }, (error2, setting) => {
+				Setting.findOne({ "_setting": "event" }, (error2: any, setting: SettingDocument) => {
 					if (error2) {
 						return next(error2);
 					}
@@ -83,7 +83,7 @@ export class SettingRoute {
 						setting.settings.set("currentEventImageArchivement", req.body.currentEventImageArchivement || event.image);
 					}
 
-					setting.save((error3, saved) => {
+					setting.save((error3: any, saved: any) => {
 						if (error3) {
 							return next(error3);
 						}
@@ -104,7 +104,7 @@ export class SettingRoute {
 				return;
 			}
 
-			Setting.findById(req.body.id, (error, setting) => {
+			Setting.findById(req.body.id, (error: any, setting: { settings: { set: (arg0: string, arg1: any) => void; get: (arg0: string) => any; }; save: (arg0: (error3: any, saved: any) => void) => void; }) => {
 				if (error) {
 					return next(error);
 				}
@@ -124,7 +124,7 @@ export class SettingRoute {
 				setting.settings.set("currentEventImageLocation", req.body.currentEventImageLocation || setting.settings.get("currentEventImageLocation"));
 				setting.settings.set("currentEventImageArchivement", req.body.currentEventImageArchivemen || setting.settings.get("currentEventImageLocation"));
 
-				setting.save((error3, saved) => {
+				setting.save((error3: any, saved: any) => {
 					if (error3) {
 						return next(error3);
 					}
@@ -148,7 +148,7 @@ export class SettingRoute {
 			return;
 		}
 
-		Setting.findById(req.body.id, (error, setting) => {
+		Setting.findById(req.body.id, (error: any, setting: { deleteOne: () => void; }) => {
 			if (error) {
 				return next(error);
 			}

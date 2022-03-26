@@ -13,14 +13,14 @@ import { Types } from "mongoose";
 export class UserRoute {
 
     static init(app: Application) {
-        app.post("/account/login", passportConfig.isNotAuthenticated, UserRoute.postLogin);
-        app.post("/account/logout", passportConfig.isAuthenticated, UserRoute.postLogout);
-        app.post("/account/logout/check", passportConfig.isAuthenticated, UserRoute.postLogoutCheck);
-        app.post("/account/create", passportConfig.isAuthenticated, UserRoute.postSignup);
-        app.post("/account/update", passportConfig.isAuthenticated, UserRoute.postUpdateProfile);
-        app.post("/account/update/password", passportConfig.isAuthenticated, UserRoute.postUpdatePassword);
-        app.post("/account/delete", passportConfig.isAuthenticated, UserRoute.postDeleteAccount);
-        app.post("/account/search", passportConfig.isAuthenticated, UserRoute.postSearchAccount);
+        app.post("/api/account/login", passportConfig.isNotAuthenticated, UserRoute.postLogin);
+        app.post("/api/account/logout", passportConfig.isAuthenticated, UserRoute.postLogout);
+        app.post("/api/account/logout/check", passportConfig.isAuthenticated, UserRoute.postLogoutCheck);
+        app.post("/api/account/create", passportConfig.isAuthenticated, UserRoute.postSignup);
+        app.post("/api/account/update", passportConfig.isAuthenticated, UserRoute.postUpdateProfile);
+        app.post("/api/account/update/password", passportConfig.isAuthenticated, UserRoute.postUpdatePassword);
+        app.post("/api/account/delete", passportConfig.isAuthenticated, UserRoute.postDeleteAccount);
+        app.post("/api/account/search", passportConfig.isAuthenticated, UserRoute.postSearchAccount);
     }
 
     /**
@@ -104,7 +104,7 @@ export class UserRoute {
             return;
         }
 
-        User.findOne({ email: req.body.email }, (err, existingUser) => {
+        User.findOne({ email: req.body.email }, (err: any, existingUser: any) => {
             if (err) { return next(err); }
             if (existingUser) {
                 sendResponseError(res, [{ msg: "Account with that email address already exists." }]);
@@ -151,7 +151,7 @@ export class UserRoute {
             return;
         }
 
-        User.findById({ _id: req.body.id }, (err, user: UserDocument) => {
+        User.findById({ _id: req.body.id }, (err: any, user: UserDocument) => {
             if (err) {
                 return next(err);
             }
@@ -200,7 +200,7 @@ export class UserRoute {
             return;
         }
 
-        User.findById({ _id: req.body.id }, (error, user: UserDocument) => {
+        User.findById({ _id: req.body.id }, (error: any, user: UserDocument) => {
             if (error) {
                 return next(error);
             }

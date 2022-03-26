@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 import passport from "passport";
 import passportLocal from "passport-local";
 import _ from "lodash";
@@ -10,12 +8,12 @@ import { sendResponseErrorMsg } from "../util/response";
 
 const LocalStrategy = passportLocal.Strategy;
 
-passport.serializeUser<any, any>((user, done) => {
+passport.serializeUser((user: any, done: any) => {
     done(undefined, user.id);
 });
 
 passport.deserializeUser((id, done) => {
-    User.findById(id, (err, user) => {
+    User.findById(id, (err: any, user: unknown) => {
         done(err, user);
     });
 });
@@ -24,7 +22,7 @@ passport.deserializeUser((id, done) => {
  * Sign in using Email and Password.
  */
 passport.use(new LocalStrategy({ usernameField: "email" }, (email, password, done) => {
-    User.findOne({ email: email.toLowerCase() }, (err, user: any) => {
+    User.findOne({ email: email.toLowerCase() }, (err: any, user: any) => {
         if (err) {
             return done(err);
         }

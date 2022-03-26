@@ -9,10 +9,11 @@ import mongo from "connect-mongo";
 import passport from "passport";
 import lusca from "lusca";
 import cors from "cors";
-import { MONGODB_URI, RATE_LIMIT_MAX, RATE_LIMIT_WINDOWMS, SESSION_SECRET, CROS_ORIGIN, ENVIRONMENT } from "./util/secrets";
+import { MONGODB_URI, RATE_LIMIT_MAX, RATE_LIMIT_WINDOWMS, SESSION_SECRET, CROS_ORIGIN } from "./util/secrets";
 import { UserRoute } from "./controllers/user";
 import { SettingRoute } from "./controllers/setting";
 import { ContentRoute } from "./controllers/content/content";
+import { ImageRoute } from "./controllers/image";
 
 const MongoStore = mongo(session);
 
@@ -20,9 +21,7 @@ const MongoStore = mongo(session);
 const app = express();
 
 // Connect to MongoDB
-const mongoUrl = MONGODB_URI;
-
-mongoose.connect(mongoUrl, { useNewUrlParser: true, useCreateIndex: true, useUnifiedTopology: true }).catch(err => {
+mongoose.connect(MONGODB_URI, { useNewUrlParser: true, useCreateIndex: true, useUnifiedTopology: true }).catch(err => {
     console.log(`MongoDB connection error. Please make sure MongoDB is running. ${err}`);
     process.exit();
 });
@@ -48,7 +47,7 @@ app.use(session({
         maxAge: 1000 * 60 * 60 * 24 * 7
     },
     store: new MongoStore({
-        url: mongoUrl,
+        client: mongoose.connection.getClient(),
         autoReconnect: true
     })
 }));
@@ -56,17 +55,17 @@ app.use(passport.initialize());
 app.use(passport.session());
 app.use(lusca.xframe("SAMEORIGIN"));
 app.use(lusca.xssProtection(true));
+
+
+
 app.use((req, res, next) => {
     res.locals.user = req.user;
     next();
 });
 
-app.use(
-    express.static(path.join(__dirname, "public"), { maxAge: 31557600000 })
-);
-
 UserRoute.init(app);
 ContentRoute.init(app);
 SettingRoute.init(app);
+ImageRoute.init(app);
 
 export default app;

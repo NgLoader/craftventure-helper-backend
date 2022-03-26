@@ -12,10 +12,10 @@ import { UserRole } from "../../models/User";
 export class ContentRoute {
 
 	static init(app: Application) {
-		app.post("/content", ContentRoute.postContents);
-		app.post("/content/create", passportConfig.isAuthenticated, ContentRoute.postCreate);
-		app.post("/content/update", passportConfig.isAuthenticated, ContentRoute.postUpdate);
-		app.post("/content/delete", passportConfig.isAuthenticated, ContentRoute.postDelete);
+		app.post("/api/content", ContentRoute.postContents);
+		app.post("/api/content/create", passportConfig.isAuthenticated, ContentRoute.postCreate);
+		app.post("/api/content/update", passportConfig.isAuthenticated, ContentRoute.postUpdate);
+		app.post("/api/content/delete", passportConfig.isAuthenticated, ContentRoute.postDelete);
 
 		ContentCategoryRoute.init(app);
 	}
@@ -59,7 +59,7 @@ export class ContentRoute {
 			await check("_categoryId", "CategoryId was not valied.").custom(value => Types.ObjectId.isValid(value)).run(req);
 		}
 		await check("name", "Name was not found.").isLength({ min: 1, max: 32 }).run(req);
-		await check("image", "Image was not found.").isURL().run(req);
+		// await check("image", "Image was not found.").isURL().run(req);
 		await check("keywords", "Keywords was not found.").isArray().run(req);
 		await check("enabled", "Enabled value was not found.").isBoolean().run(req);
 
@@ -96,7 +96,7 @@ export class ContentRoute {
 		});
 
 		if (item._categoryId) {
-			ContentCategory.findById(item._categoryId, (error, result) => {
+			ContentCategory.findById(item._categoryId, (error: any, result: any) => {
 				if (error) {
 					return next(error);
 				}
@@ -144,7 +144,7 @@ export class ContentRoute {
             return;
         }
 
-		Content.findById(req.body._id, async (error, result) => {
+		Content.findById(req.body._id, async (error: any, result: { name: any; image: any; keywords: any; checklist: any; description: any; video: any; enabled: any; save: (arg0: (error2: any, result2: any) => void) => void; }) => {
 			if (error) {
 				return next(error);
 			}
@@ -161,7 +161,7 @@ export class ContentRoute {
 			result.description = req.body.description || result.description;
 			result.video = req.body.video || result.video;
 			result.enabled = req.body.enabled != undefined ? req.body.enabled : result.enabled;
-			result.save((error2, result2) => {
+			result.save((error2: any, result2: unknown) => {
 				if (error2) {
 					return next(error2);
 				}
@@ -195,7 +195,7 @@ export class ContentRoute {
             return;
         }
 
-		Content.findById(req.body._id, async (error, result) => {
+		Content.findById(req.body._id, async (error: any, result: { deleteOne: () => void; }) => {
 			if (error) {
 				return next(error);
 			}
